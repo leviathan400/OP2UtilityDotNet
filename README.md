@@ -99,6 +99,15 @@ Load Outpost 2 tilesets (custom PBMP format or standard BMP).
 - **Tag**: 4-character tag for file format identification
 - **BitTwiddle**: Utility functions for bit manipulation
 
+## Namespaces
+
+- **OP2UtilityDotNet**: Core classes and utilities
+- **OP2UtilityDotNet.Archive**: VOL and CLM archive handling
+- **OP2UtilityDotNet.OP2Map**: Map and saved game file handling
+- **OP2UtilityDotNet.Bitmap**: Bitmap file processing
+- **OP2UtilityDotNet.Sprite**: Sprite and animation support
+- **OP2UtilityDotNet.Streams**: Stream utilities
+
 ## Example Usage
 
 ### C# Example
@@ -123,16 +132,7 @@ Console.WriteLine("Map size: " & currentMap.WidthInTiles() & " x " & currentMap.
 Console.WriteLine("Number of tile sets: " & currentMap.tilesetSources.Count)
 ```
 
-## Namespaces
-
-- **OP2UtilityDotNet**: Core classes and utilities
-- **OP2UtilityDotNet.Archive**: VOL and CLM archive handling
-- **OP2UtilityDotNet.OP2Map**: Map and saved game file handling
-- **OP2UtilityDotNet.Bitmap**: Bitmap file processing
-- **OP2UtilityDotNet.Sprite**: Sprite and animation support
-- **OP2UtilityDotNet.Streams**: Stream utilities
-
 ## Related Projects
 
-- [OP2Utility)](https://github.com/OutpostUniverse/OP2Utility) - The original C++ implementation
+- [OP2Utility](https://github.com/OutpostUniverse/OP2Utility) - The original C++ implementation
 
