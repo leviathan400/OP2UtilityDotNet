@@ -16,8 +16,14 @@ namespace OP2UtilityDotNet.Streams
 
 		public SliceStream(Stream baseStream, long dataOffset, long dataLength)
 		{
-			if (dataOffset < 0 || dataOffset >= baseStream.Length)
+			// Allow dataOffset == baseStream.Length so a zero-length slice at
+			// the end of the stream is legal (e.g. an empty entry stored at the
+			// very end of an archive).
+			if (dataOffset < 0 || dataOffset > baseStream.Length)
 				throw new System.ArgumentOutOfRangeException(nameof(dataOffset));
+			// dataLength is also bounded by baseStream.Length to prevent the
+			// dataOffset + dataLength addition below from overflowing (e.g.
+			// dataLength == long.MaxValue with dataOffset == 1).
 			if (dataLength < 0 || dataLength > baseStream.Length)
 				throw new System.ArgumentOutOfRangeException(nameof(dataLength));
 			if (dataOffset + dataLength > baseStream.Length)
@@ -43,9 +49,17 @@ namespace OP2UtilityDotNet.Streams
 
 		public override int Read(byte[] buffer, int offset, int count)
 		{
-			if (_Position + count > _DataLength)
+			// Stream.Read contract: read up to `count` bytes; returning 0 means
+			// end-of-stream. Clamp `count` to whatever the slice has left
+			// instead of bailing with 0, otherwise callers reading in chunks
+			// larger than the remaining slice see a spurious EOF.
+			if (_Position >= _DataLength)
 			{
 				return 0;
+			}
+			if (_Position + count > _DataLength)
+			{
+				count = (int)(_DataLength - _Position);
 			}
 
 			// Set base stream position
@@ -82,15 +96,21 @@ namespace OP2UtilityDotNet.Streams
 					break;
 
 				case SeekOrigin.End:
-					_Position = _DataLength - offset;
+					// Standard Stream contract: SeekOrigin.End computes
+					// (Length + offset). Callers pass a non-positive offset to
+					// land inside the slice; offset == 0 lands at EOF.
+					_Position = _DataLength + offset;
 					break;
 			}
 
 			if (_Position < 0)
 				_Position = 0;
 
-			if (_Position >= _DataLength)
-				_Position = _DataLength - 1;
+			// EOF is a legal Position (one past the last byte). Clamp to
+			// _DataLength, not _DataLength - 1, otherwise the final byte is
+			// unreachable and zero-length slices cannot be seeked at all.
+			if (_Position > _DataLength)
+				_Position = _DataLength;
 
 			return _Position;
 		}

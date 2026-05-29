@@ -11,9 +11,23 @@ namespace OP2UtilityDotNet.Archive
 		public ClmFile(string filename) : base(filename)
 		{
 			FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
-			clmFileReader = new BinaryReader(fs);
-			m_ArchiveFileSize = clmFileReader.BaseStream.Length;
-			ReadHeader();
+			try
+			{
+				clmFileReader = new BinaryReader(fs);
+				m_ArchiveFileSize = clmFileReader.BaseStream.Length;
+				ReadHeader();
+			}
+			catch
+			{
+				// If header parsing throws (malformed archive), dispose the
+				// underlying stream so the file handle is not leaked.
+				if (clmFileReader != null) {
+					clmFileReader.Dispose();
+				} else {
+					fs.Dispose();
+				}
+				throw;
+			}
 		}
 		
 		// Returns the internal file name of the packed file corresponding to index.

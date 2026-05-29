@@ -355,7 +355,22 @@ namespace OP2UtilityDotNet.Bitmap
 
 		private static void ReadPixels(BinaryReader seekableReader, BitmapFile bitmapFile)
 		{
+			// Both size and pixelOffset are unsigned values read from the
+			// file. If pixelOffset > size the subtraction wraps to a near
+			// 4 GB value and the subsequent allocation OOMs. Validate both
+			// the relationship and that the resulting block actually fits
+			// inside the underlying stream before allocating.
+			if (bitmapFile.bmpHeader.pixelOffset > bitmapFile.bmpHeader.size) {
+				throw new System.Exception("Bitmap pixelOffset is greater than the declared file size.");
+			}
+
 			uint pixelContainerSize = bitmapFile.bmpHeader.size - bitmapFile.bmpHeader.pixelOffset;
+
+			long remainingInStream = seekableReader.BaseStream.Length - seekableReader.BaseStream.Position;
+			if (pixelContainerSize > remainingInStream) {
+				throw new System.Exception("Bitmap pixel block exceeds the remaining bytes in the stream.");
+			}
+
 			VerifyPixelSizeMatchesImageDimensionsWithPitch(bitmapFile.imageHeader.bitCount, bitmapFile.imageHeader.width, bitmapFile.imageHeader.height, (int)pixelContainerSize);
 
 			bitmapFile.pixels = new byte[pixelContainerSize];

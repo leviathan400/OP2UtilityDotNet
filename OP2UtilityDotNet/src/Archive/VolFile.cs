@@ -15,10 +15,24 @@ namespace OP2UtilityDotNet.Archive
 		public VolFile(string filename) : base(filename)
 		{
 			FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
-			archiveFileReader = new BinaryReader(fs);
-			m_ArchiveFileSize = archiveFileReader.BaseStream.Length;
+			try
+			{
+				archiveFileReader = new BinaryReader(fs);
+				m_ArchiveFileSize = archiveFileReader.BaseStream.Length;
 
-			ReadVolHeader();
+				ReadVolHeader();
+			}
+			catch
+			{
+				// If header parsing throws (malformed archive), dispose the
+				// underlying stream so the file handle is not leaked.
+				if (archiveFileReader != null) {
+					archiveFileReader.Dispose();
+				} else {
+					fs.Dispose();
+				}
+				throw;
+			}
 		}
 
 		// Internal file status
@@ -339,6 +353,14 @@ namespace OP2UtilityDotNet.Archive
 		{
 			uint actualStringTableLength = archiveFileReader.ReadUInt32();
 
+			// Validate the reported inner length fits within the outer
+			// string-table length (header + 4 bytes for the length field
+			// itself). Without this check the unsigned subtraction below
+			// can wrap on a malformed file and produce a multi-GB seek.
+			if ((ulong)actualStringTableLength + 4UL > m_StringTableLength) {
+				throw new System.Exception("The string table inner length exceeds the declared string table length in volume " + m_ArchiveFilename);
+			}
+
 			byte[] charBuffer = archiveFileReader.ReadBytes((int)actualStringTableLength);
 
 			m_StringTable.Add("");
@@ -477,7 +499,11 @@ namespace OP2UtilityDotNet.Archive
 				IndexEntry indexEntry = new IndexEntry();
 
 				long fileSize = volInfo.fileStreamReaders[i].BaseStream.Length;
-				if (fileSize > uint.MaxValue) {
+				// IndexEntry.fileSize is a 32-bit signed value (matching the
+				// public int GetSize API). Capping at int.MaxValue rather
+				// than uint.MaxValue prevents files between 2 GB and 4 GB
+				// from round-tripping as negative sizes.
+				if (fileSize > int.MaxValue) {
 					throw new System.Exception("File " + volInfo.filesToPack[i] +
 						" is too large to fit inside a volume archive. Writing volume " + volumeFilename + " aborted.");
 				}

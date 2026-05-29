@@ -1,5 +1,37 @@
 # Changes
 
+## 1.4.1
+
+### Security
+- **Malformed bitmap OOM** (`BitmapFile.ReadPixels`): A crafted BMP with
+  `pixelOffset > size` would underflow the unsigned subtraction to ~4 GB and
+  trigger an OOM allocation. The relationship is now validated and the
+  resulting block is checked against the remaining bytes in the stream.
+- **Malformed volume seek wrap** (`VolFile.ReadStringTable`): A crafted `.vol`
+  with an inner string-table length larger than its container would underflow
+  an unsigned subtraction to a multi-GB seek offset. Now validated before
+  use.
+
+### Bug fixes
+- **`SliceStream.Read`**: Now reads up to `count` bytes, clamping to the
+  remaining slice length. Previously returned 0 (spurious EOF) when the
+  caller requested more bytes than remained.
+- **`SliceStream.Seek`** with `SeekOrigin.End`: Now uses the standard
+  `Length + offset` convention (callers pass a non-positive offset).
+  Previously subtracted, reversing direction. Position is also clamped to
+  `Length` (a valid EOF position) rather than `Length - 1`, so the final
+  byte is reachable and zero-length slices behave correctly.
+- **`SliceStream` constructor**: Now permits a zero-length slice positioned
+  at the end of the underlying stream (e.g. an empty archive entry at EOF).
+- **Resource leaks on malformed input**: `VolFile`, `ClmFile`, and the
+  `OP2BmpLoader(string, string)` / `OP2BmpLoader(string, Stream)`
+  constructors now dispose the underlying `FileStream` if header parsing
+  throws. Previously the file handle was leaked.
+- **`VolFile.CreateArchive` file-size limit**: Lowered the per-file cap
+  from `uint.MaxValue` to `int.MaxValue` to match the signed
+  `IndexEntry.fileSize` field and the `int GetSize` API. Files between 2 GB
+  and 4 GB no longer round-trip as negative sizes.
+
 ## 1.4.0
 
 ### Security

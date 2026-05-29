@@ -11,23 +11,37 @@ namespace OP2UtilityDotNet.Sprite
 		{
 			FileStream fs = new FileStream(bmpFilename, FileMode.Open, FileAccess.Read, FileShare.Read);
 			bmpReader = new BinaryReader(fs);
-			
-			artFile = ArtFile.Read(artFilename);
+			try
+			{
+				artFile = ArtFile.Read(artFilename);
+			}
+			catch
+			{
+				bmpReader.Dispose();
+				throw;
+			}
 		}
 
 		public OP2BmpLoader(string bmpFilename, Stream artStream)
 		{
 			FileStream fs = new FileStream(bmpFilename, FileMode.Open, FileAccess.Read, FileShare.Read);
 			bmpReader = new BinaryReader(fs);
-			
-			artFile = ArtFile.Read(artStream);
+			try
+			{
+				artFile = ArtFile.Read(artStream);
+			}
+			catch
+			{
+				bmpReader.Dispose();
+				throw;
+			}
 		}
 
 		public OP2BmpLoader(string bmpFilename, ArtFile artFile)
 		{
 			FileStream fs = new FileStream(bmpFilename, FileMode.Open, FileAccess.Read, FileShare.Read);
 			bmpReader = new BinaryReader(fs);
-			
+
 			this.artFile = artFile;
 		}
 

@@ -86,6 +86,61 @@ namespace UnitTest.src.Stream
 		}
 
 		[TestMethod]
+		public void EmptySliceAtEndOfStreamIsAllowed()
+		{
+			// A zero-length slice positioned exactly at the end of the
+			// underlying stream is legitimate (e.g. an empty archive entry
+			// stored at the very end of the file).
+			using (FileStream fs = new FileStream("src/Stream/data/SimpleStream.txt", FileMode.Open))
+			{
+				SliceStream slice = new SliceStream(fs, fs.Length, 0);
+				Assert.AreEqual(0L, slice.Length);
+				Assert.AreEqual(0L, slice.Position);
+				Assert.AreEqual(0, slice.Read(new byte[4], 0, 4));
+			}
+		}
+
+		[TestMethod]
+		public void ReadClampsToRemainingBytes()
+		{
+			// Stream.Read contract: read up to `count` bytes. The previous
+			// implementation returned 0 (spurious EOF) when the requested
+			// count was larger than the bytes remaining in the slice.
+			using (FileStream fs = new FileStream("src/Stream/data/SimpleStream.txt", FileMode.Open))
+			{
+				SliceStream slice = new SliceStream(fs, 0, fs.Length);
+
+				byte[] buffer = new byte[fs.Length + 16];
+				int bytesRead = slice.Read(buffer, 0, buffer.Length);
+
+				Assert.AreEqual(fs.Length, bytesRead);
+				Assert.AreEqual(fs.Length, slice.Position);
+
+				// A second read at EOF should return 0.
+				Assert.AreEqual(0, slice.Read(buffer, 0, 1));
+			}
+		}
+
+		[TestMethod]
+		public void SeekFromEndUsesPositiveOffsetConvention()
+		{
+			// SeekOrigin.End computes (Length + offset). offset == 0 lands at
+			// EOF; a negative offset moves back into the slice.
+			using (FileStream fs = new FileStream("src/Stream/data/SimpleStream.txt", FileMode.Open))
+			{
+				SliceStream slice = new SliceStream(fs, 0, fs.Length);
+
+				Assert.AreEqual(slice.Length, slice.Seek(0, SeekOrigin.End));
+				Assert.AreEqual(slice.Length - 1, slice.Seek(-1, SeekOrigin.End));
+
+				// Final byte must be readable after seeking to length-1.
+				slice.Seek(-1, SeekOrigin.End);
+				int lastByte = slice.ReadByte();
+				Assert.AreNotEqual(-1, lastByte);
+			}
+		}
+
+		[TestMethod]
 		public void SliceOfSliceMatchesCorrectOffset2Param()
 		{
 			using (FileStream fs = new FileStream("src/Stream/data/SimpleStream.txt", FileMode.Open))
