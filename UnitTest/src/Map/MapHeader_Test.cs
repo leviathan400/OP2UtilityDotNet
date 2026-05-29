@@ -8,6 +8,21 @@ namespace UnitTest.src.OP2Map
 	public class MapHeader_Test
 	{
 		[TestMethod]
+		public void SizeInBytes_IsCompileTimeConstant()
+		{
+			// Static access on the type (not an instance) compiles only if
+			// SizeInBytes is a const/static member. This guards against
+			// regressing it back to an instance field.
+			Assert.AreEqual(20, MapHeader.SizeInBytes);
+
+			System.Reflection.FieldInfo field = typeof(MapHeader).GetField(
+				nameof(MapHeader.SizeInBytes),
+				System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+			Assert.IsNotNull(field, "SizeInBytes should be a static field");
+			Assert.IsTrue(field.IsLiteral && !field.IsInitOnly, "SizeInBytes should be declared const");
+		}
+
+		[TestMethod]
 		public void VersionTagValid()
 		{
 			MapHeader mapHeader = new MapHeader();

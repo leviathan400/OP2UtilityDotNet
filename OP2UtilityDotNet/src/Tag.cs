@@ -71,7 +71,9 @@ namespace OP2UtilityDotNet
 
 		public override int GetHashCode()
 		{
-			return text.GetHashCode();
+			// Hash the byte content, not the array reference, so equal Tags
+			// hash equally (required by the Equals/GetHashCode contract).
+			return (text[0] << 24) | (text[1] << 16) | (text[2] << 8) | text[3];
 		}
 
 		public static bool operator ==(Tag lhs, Tag rhs)

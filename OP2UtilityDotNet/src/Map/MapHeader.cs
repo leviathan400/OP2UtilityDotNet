@@ -6,7 +6,7 @@ namespace OP2UtilityDotNet.OP2Map
 	// Outpost 2 map and save file header
 	public class MapHeader
 	{
-		public int SizeInBytes = 20;
+		public const int SizeInBytes = 20;
 
 		public MapHeader() { }
 

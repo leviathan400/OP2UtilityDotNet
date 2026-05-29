@@ -93,9 +93,36 @@ namespace OP2UtilityDotNet.Archive
 
 		public virtual void ExtractAllFiles(string destDirectory)
 		{
+			string fullDestDirectory = Path.GetFullPath(destDirectory);
+
 			for (int i = 0; i < GetCount(); ++i)
 			{
-				ExtractFile(i, Path.Combine(destDirectory, GetName(i)));
+				string entryName = GetName(i);
+
+				// Reject any entry name that contains a directory component, a rooted
+				// path, or path-traversal segments. Archive entries should be plain
+				// filenames; anything else is a malicious or malformed archive
+				// attempting to write outside the destination directory.
+				string safeName = Path.GetFileName(entryName);
+				if (string.IsNullOrEmpty(safeName) || !string.Equals(safeName, entryName, System.StringComparison.Ordinal))
+				{
+					throw new System.Exception("Archive " + m_ArchiveFilename + " contains an entry with an unsafe path: " + entryName);
+				}
+
+				string outputPath = Path.Combine(fullDestDirectory, safeName);
+				string fullOutputPath = Path.GetFullPath(outputPath);
+
+				// Belt-and-suspenders check: ensure the resolved path stays within
+				// the destination directory.
+				string destWithSeparator = fullDestDirectory.EndsWith(Path.DirectorySeparatorChar.ToString())
+					? fullDestDirectory
+					: fullDestDirectory + Path.DirectorySeparatorChar;
+				if (!fullOutputPath.StartsWith(destWithSeparator, System.StringComparison.OrdinalIgnoreCase))
+				{
+					throw new System.Exception("Archive " + m_ArchiveFilename + " contains an entry that would extract outside the destination directory: " + entryName);
+				}
+
+				ExtractFile(i, outputPath);
 			}
 		}
 		public abstract Stream OpenStream(int index);

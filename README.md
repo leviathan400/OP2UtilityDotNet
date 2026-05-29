@@ -139,4 +139,5 @@ Console.WriteLine("Number of tile sets: " & currentMap.tilesetSources.Count)
 ## Links
 
 - [OP2 Mission Editor](https://forum.outpost2.net/index.php/topic,6318.0.html) - Outpost Universe forum thread
-
+- [OP2MissionEditor](http://github.com/leviathan400/OP2MissionEditor) - OP2MissionEditor map editor
+- [OP2Mapper3](http://github.com/leviathan400/OP2Mapper) - OP2Mapper3 map editor
