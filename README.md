@@ -1,5 +1,7 @@
 # OP2UtilityDotNet
 
+[![CI](https://github.com/leviathan400/OP2UtilityDotNet/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/leviathan400/OP2UtilityDotNet/actions/workflows/ci.yml)
+
 A C# .NET library for working with Outpost 2 game files, including maps (.map), saved games (.op2), and archive files (.vol, .clm).
 
 This is the C# .NET port of OP2Utility for C++, providing equivalent functionality with a modern .NET API.
